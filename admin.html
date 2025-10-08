@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PGY 說明會報名分析儀表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .stat-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .stat-card.active {
+            border-color: #14b8a6; /* teal-500 */
+            box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.2);
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+    <div id="app" class="max-w-7xl mx-auto">
+        
+        <header class="flex flex-col sm:flex-row justify-between items-center mb-8 pb-4 border-b">
+            <div>
+                <h1 class="text-3xl font-extrabold text-gray-800 tracking-tight">PGY 說明會報名儀表板</h1>
+                <p class="text-gray-500 mt-1">即時報名數據分析總覽 (點擊下方卡片可篩選)</p>
+            </div>
+            <div class="flex items-center mt-4 sm:mt-0">
+                <span id="last-updated" class="text-sm text-gray-400 mr-4"></span>
+                <button id="refresh-button" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded-lg flex items-center transition">
+                    <svg id="refresh-icon" class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5M20 4l-4 4M4 20l4-4" />
+                    </svg>
+                    <span id="refresh-text">手動更新</span>
+                </button>
+            </div>
+        </header>
+
+        <div id="loading-spinner" class="text-center py-20">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-teal-500 mx-auto"></div>
+            <p class="mt-4 text-gray-600">正在從 Google Sheet 載入最新數據...</p>
+        </div>
+
+        <main id="dashboard-content" class="hidden">
+            <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div id="filter-All" data-filter="All" class="stat-card bg-white p-6 rounded-xl shadow cursor-pointer active">
+                    <h2 class="text-gray-500 text-lg font-semibold">總報名人數 (綜合)</h2>
+                    <p id="total-count" class="text-5xl font-extrabold text-teal-600 mt-2">0</p>
+                </div>
+                <div id="filter-上午" data-filter="上午" class="stat-card bg-white p-6 rounded-xl shadow cursor-pointer">
+                    <h2 class="text-gray-500 text-lg font-semibold">☀️ 上午場</h2>
+                    <p id="morning-count" class="text-5xl font-extrabold text-cyan-600 mt-2">0</p>
+                </div>
+                <div id="filter-下午" data-filter="下午" class="stat-card bg-white p-6 rounded-xl shadow cursor-pointer">
+                    <h2 class="text-gray-500 text-lg font-semibold">🌙 下午場</h2>
+                    <p id="afternoon-count" class="text-5xl font-extrabold text-indigo-600 mt-2">0</p>
+                </div>
+            </section>
+
+            <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow">
+                    <h2 id="chart-title" class="text-xl font-bold text-gray-700 mb-4">各校報名人數分佈 (綜合)</h2>
+                    <div class="h-96">
+                        <canvas id="school-chart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow">
+                    <h2 id="list-title" class="text-xl font-bold text-gray-700 mb-4">詳細數據列表 (綜合)</h2>
+                    <div id="school-list" class="space-y-3 max-h-96 overflow-y-auto pr-2"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzqQl2-FFP2OValNMlIC9WRLd8iCV__Mgk8og3CZmmAWtDdgpiwFpbFQE00ZUiEfSuXcQ/exec';
+        
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const dashboardContent = document.getElementById('dashboard-content');
+        const refreshButton = document.getElementById('refresh-button');
+        const refreshIcon = document.getElementById('refresh-icon');
+        const lastUpdatedEl = document.getElementById('last-updated');
+        const chartTitle = document.getElementById('chart-title');
+        const listTitle = document.getElementById('list-title');
+
+        let schoolChartInstance = null;
+        let fullDataSet = null; 
+        let currentFilter = 'All'; 
+
+        function updateDashboardView() {
+            if (!fullDataSet) return;
+
+            document.querySelectorAll('[data-filter]').forEach(card => {
+                card.classList.toggle('active', card.dataset.filter === currentFilter);
+            });
+
+            const titleSuffix = currentFilter === 'All' ? '(綜合)' : `(${currentFilter}場)`;
+            chartTitle.textContent = `各校報名人數分佈 ${titleSuffix}`;
+            listTitle.textContent = `詳細數據列表 ${titleSuffix}`;
+
+            const schoolData = fullDataSet.schoolData || {};
+            const schoolCountsForView = schoolData[currentFilter] || {};
+            renderSchoolData(schoolCountsForView);
+        }
+
+        function renderSummaryCards(data) {
+            document.getElementById('total-count').textContent = data.total;
+            document.getElementById('morning-count').textContent = data.sessionCounts['上午'] || 0;
+            document.getElementById('afternoon-count').textContent = data.sessionCounts['下午'] || 0;
+        }
+
+        function renderSchoolData(schoolCounts) {
+            const sortedSchools = Object.entries(schoolCounts).sort(([, a], [, b]) => b - a);
+            
+            const schoolList = document.getElementById('school-list');
+            schoolList.innerHTML = '';
+            if (sortedSchools.length === 0) {
+                schoolList.innerHTML = `<p class="text-gray-500">此篩選條件尚無報名資料</p>`;
+            } else {
+                sortedSchools.forEach(([school, count]) => {
+                    const item = document.createElement('div');
+                    item.className = 'flex justify-between items-center p-3 bg-gray-50 rounded-lg';
+                    item.innerHTML = `<span class="font-semibold text-gray-700">${school}</span><span class="font-bold text-teal-600 bg-teal-100 px-3 py-1 rounded-full">${count} 人</span>`;
+                    schoolList.appendChild(item);
+                });
+            }
+
+            const ctx = document.getElementById('school-chart').getContext('2d');
+            const topSchools = sortedSchools.slice(0, 10);
+            const labels = topSchools.map(item => item[0]);
+            const data = topSchools.map(item => item[1]);
+
+            if (schoolChartInstance) {
+                schoolChartInstance.destroy();
+            }
+            schoolChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '報名人數',
+                        data: data,
+                        backgroundColor: 'rgba(20, 184, 166, 0.7)',
+                        borderColor: 'rgba(13, 148, 136, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { x: { beginAtZero: true } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+        
+        async function fetchDashboardData() {
+            loadingSpinner.style.display = 'block';
+            dashboardContent.classList.add('hidden');
+            refreshIcon.classList.add('animate-spin');
+            refreshButton.disabled = true;
+
+            try {
+                const response = await fetch(`${WEB_APP_URL}?action=getDashboardData`);
+                if (!response.ok) throw new Error(`伺服器回應錯誤: ${response.status} ${response.statusText}`);
+                
+                const result = await response.json();
+
+                if (!result.success) throw new Error(result.message);
+                
+                // **【已修改】** 增加對舊資料格式的相容性處理
+                if (!result.data || !result.data.schoolData) {
+                    console.error("從後端收到的資料結構不符預期:", result);
+                    
+                    // 檢查是否存在舊的 schoolCounts 格式
+                    if (result.data && result.data.schoolCounts) {
+                        console.warn("偵測到舊版後端資料格式。儀表板將以有限功能模式運作（無法篩選場次）。請務必更新您的 Google Apps Script 以啟用完整功能。");
+                        // 從舊格式轉換為新格式，但只有綜合資料
+                        result.data.schoolData = {
+                            'All': result.data.schoolCounts,
+                            '上午': {},
+                            '下午': {}
+                        };
+                    } else {
+                        // 如果連舊格式都沒有，才拋出錯誤
+                        throw new Error("資料格式不正確。請確認您已部署最新版本的 Google Apps Script。");
+                    }
+                }
+
+                fullDataSet = result.data;
+                renderSummaryCards(fullDataSet);
+                updateDashboardView();
+                
+                dashboardContent.classList.remove('hidden');
+                const now = new Date();
+                lastUpdatedEl.textContent = `最後更新: ${now.toLocaleTimeString()}`;
+
+            } catch (error) {
+                console.error('儀表板資料載入失敗:', error);
+                
+                let detailedMessage = error.message;
+                if (error instanceof SyntaxError) {
+                    detailedMessage = "後端回應的不是有效的資料格式。這通常表示 Apps Script 內部發生錯誤，建議前往 Apps Script 專案頁面查看「執行紀錄」。";
+                }
+                
+                alert(`無法載入儀表板數據:\n\n${detailedMessage}`);
+            } finally {
+                loadingSpinner.style.display = 'none';
+                refreshIcon.classList.remove('animate-spin');
+                refreshButton.disabled = false;
+            }
+        }
+        
+        document.querySelectorAll('[data-filter]').forEach(card => {
+            card.addEventListener('click', () => {
+                currentFilter = card.dataset.filter;
+                updateDashboardView();
+            });
+        });
+        
+        refreshButton.addEventListener('click', fetchDashboardData);
+
+        fetchDashboardData();
+    });
+    </script>
+</body>
+</html>
+
