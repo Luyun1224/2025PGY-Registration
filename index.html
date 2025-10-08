@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>奇美醫學中心 PGY 說明會報名</title>
+    <!-- 載入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 使用 Inter 字體 -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0fdfa; /* 淺青色背景，充滿朝氣 */
+        }
+        .vibrant-card {
+            box-shadow: 0 10px 25px -3px rgba(6, 182, 212, 0.4), 0 4px 6px -2px rgba(6, 182, 212, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .vibrant-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px -5px rgba(6, 182, 212, 0.6), 0 6px 10px -3px rgba(6, 182, 212, 0.3);
+        }
+        .capacity-pill {
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .capacity-pill:hover {
+            transform: scale(1.05);
+        }
+        /* 自定義類別用於個人資料標籤 */
+        .form-label-enhanced {
+            font-size: 1rem; /* 預設大小 */
+            font-weight: 600; /* semi-bold */
+        }
+        @media (min-width: 640px) { /* sm breakpoint */
+            .form-label-enhanced {
+                font-size: 1.125rem; /* text-lg on sm screens */
+                font-weight: 700; /* bold */
+            }
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8 min-h-screen flex items-center justify-center">
+
+    <!-- 新增：浮動訊息/錯誤提示區 (Toast) -->
+    <div id="toast-container" class="fixed inset-x-0 top-4 z-50 flex justify-center pointer-events-none">
+        <div id="toast-box" class="p-4 rounded-xl font-bold transition-all duration-300 transform translate-y-[-150%] opacity-0 shadow-2xl min-w-[300px]"></div>
+    </div>
+
+    <div id="app" class="w-full max-w-4xl">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-teal-600 mb-2 tracking-tight">
+                奇美醫學中心 115 PGY 說明會
+            </h1>
+            <p class="text-xl text-teal-500 font-semibold mb-6">
+                ✨ 加入我們！探索您的醫學職涯起點！✨
+            </p>
+            <div class="bg-amber-100 border-l-4 border-amber-500 p-4 rounded-lg shadow-lg">
+                <p class="text-amber-800 text-sm sm:text-base font-medium flex items-center justify-center space-x-4">
+                    <!-- 活動日期 -->
+                    <span class="text-lg sm:text-xl font-extrabold text-amber-900">🗓️ 114/11/22 (五)</span>
+                    <span class="h-6 w-px bg-amber-500 hidden sm:inline-block"></span>
+                    <span class="text-sm sm:text-base">⏰ 報名依回覆時間，一人限報一場。</span>
+                </p>
+            </div>
+        </header>
+
+        <main class="vibrant-card bg-white p-6 sm:p-10 rounded-3xl border border-teal-200">
+            
+            <!-- 場次資訊與剩餘名額顯示 -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-teal-700 mb-4 border-b-2 border-teal-100 pb-2">場次資訊 (限額 70 人)</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- 上午場 -->
+                    <div class="capacity-pill p-4 rounded-xl bg-cyan-50 border border-cyan-200 flex justify-between items-center shadow-md">
+                        <div>
+                            <p class="text-lg font-semibold text-cyan-700">☀️ 上午場</p>
+                            <!-- 調整：時間加粗且放大 -->
+                            <p class="text-base sm:text-lg font-bold text-gray-700">9:30 - 12:30</p>
+                        </div>
+                        <div id="slot-上午" class="flex flex-col items-center justify-center w-24 h-24 rounded-full bg-cyan-500 text-white shadow-xl">
+                            <span class="text-xs font-medium">剩餘</span>
+                            <span class="text-3xl font-extrabold" data-session="上午">--</span>
+                            <span class="text-xs font-medium">名額</span>
+                        </div>
+                    </div>
+                    <!-- 下午場 -->
+                    <div class="capacity-pill p-4 rounded-xl bg-indigo-50 border border-indigo-200 flex justify-between items-center shadow-md">
+                        <div>
+                            <p class="text-lg font-semibold text-indigo-700">🌙 下午場</p>
+                            <!-- 調整：時間加粗且放大 -->
+                            <p class="text-base sm:text-lg font-bold text-gray-700">13:30 - 16:30</p>
+                        </div>
+                        <div id="slot-下午" class="flex flex-col items-center justify-center w-24 h-24 rounded-full bg-indigo-500 text-white shadow-xl">
+                            <span class="text-xs font-medium">剩餘</span>
+                            <span class="text-3xl font-extrabold" data-session="下午">--</span>
+                            <span class="text-xs font-medium">名額</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 報名表單 -->
+            <form id="registration-form" class="space-y-6">
+                <h2 class="text-2xl font-bold text-teal-700 mb-4 border-b-2 border-teal-100 pb-2">個人資料</h2>
+                
+                <!-- 1. 姓名 -->
+                <div>
+                    <!-- 調整：使用 form-label-enhanced 讓標籤放大加粗 -->
+                    <label for="name" class="block text-gray-700 required-field form-label-enhanced">姓名</label>
+                    <input type="text" id="name" name="name" required class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 p-3 border">
+                </div>
+                
+                <!-- 2. E-mail -->
+                <div>
+                    <!-- 調整：使用 form-label-enhanced 讓標籤放大加粗 -->
+                    <label for="email" class="block text-gray-700 required-field form-label-enhanced">E-mail</label>
+                    <input type="email" id="email" name="email" required class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 p-3 border">
+                </div>
+
+                <!-- 3. 年制 -->
+                <div>
+                    <!-- 調整：使用 form-label-enhanced 讓標籤放大加粗 -->
+                    <label class="block text-gray-700 mb-2 required-field form-label-enhanced">年制</label>
+                    <div class="flex flex-wrap gap-4">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="year_system" value="七年制醫學系" required class="form-radio text-cyan-600 focus:ring-cyan-500">
+                            <span class="ml-2 text-gray-700">七年制醫學系</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="year_system" value="六年制醫學系" class="form-radio text-cyan-600 focus:ring-cyan-500">
+                            <span class="ml-2 text-gray-700">六年制醫學系</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="year_system" value="中西醫雙主修" class="form-radio text-cyan-600 focus:ring-cyan-500">
+                            <span class="ml-2 text-gray-700">中西醫雙主修</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="year_system" value="學士後醫學系" class="form-radio text-cyan-600 focus:ring-cyan-500">
+                            <span class="ml-2 text-gray-700">學士後醫學系</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 4. 所屬學校 -->
+                <div>
+                    <!-- 調整：使用 form-label-enhanced 讓標籤放大加粗 -->
+                    <label for="school" class="block text-gray-700 required-field form-label-enhanced">所屬學校</label>
+                    <select id="school" name="school" required class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 p-3 border">
+                        <option value="" disabled selected>請選擇您的學校</option>
+                        <option value="國立臺灣大學">國立臺灣大學</option>
+                        <option value="長庚大學">長庚大學</option>
+                        <option value="國立陽明大學">國立陽明大學</option>
+                        <option value="中國醫藥大學">中國醫藥大學</option>
+                        <option value="國防醫學院">國防醫學院</option>
+                        <option value="中山醫學大學">中山醫學大學</option>
+                        <option value="台北醫學大學">台北醫學大學</option>
+                        <option value="國立成功大學">國立成功大學</option>
+                        <option value="馬偕醫學院">馬偕醫學院</option>
+                        <option value="義守大學">義守大學</option>
+                        <option value="輔仁大學">輔仁大學</option>
+                        <option value="高雄醫學大學">高雄醫學大學</option>
+                        <option value="慈濟大學">慈濟大學</option>
+                        <option value="國外醫學院校">國外醫學院校</option>
+                    </select>
+                </div>
+                
+                <!-- 5. 參加場次 -->
+                <div id="session-selection-group">
+                    <!-- 調整：使用 form-label-enhanced 讓標籤放大加粗 -->
+                    <label class="block text-gray-700 mb-2 required-field form-label-enhanced">參加場次 (請擇一)</label>
+                    <div class="flex flex-wrap gap-6">
+                        <!-- 上午場次選項 (JS動態控制狀態) -->
+                        <label class="session-option-label inline-flex items-center p-3 border rounded-lg transition duration-150 ease-in-out w-full sm:w-auto" data-session-type="上午">
+                            <input type="radio" name="session" value="上午" required class="session-radio form-radio text-cyan-600 focus:ring-cyan-500">
+                            <span class="ml-2 text-lg font-medium">上午場</span>
+                            <span class="ml-3 text-sm font-bold text-teal-500" data-count-status="上午">(剩餘 -- 名)</span>
+                        </label>
+                        <!-- 下午場次選項 (JS動態控制狀態) -->
+                        <label class="session-option-label inline-flex items-center p-3 border rounded-lg transition duration-150 ease-in-out w-full sm:w-auto" data-session-type="下午">
+                            <input type="radio" name="session" value="下午" class="session-radio form-radio text-cyan-600 focus:ring-cyan-500">
+                            <span class="ml-2 text-lg font-medium">下午場</span>
+                            <span class="ml-3 text-sm font-bold text-teal-500" data-count-status="下午">(剩餘 -- 名)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 6. 關於本院是否有想了解的地方？ -->
+                <div>
+                    <!-- 調整：使用 form-label-enhanced 讓標籤放大加粗 -->
+                    <label for="questions" class="block text-gray-700 form-label-enhanced">關於本院是否有想了解的地方？（例如：PGY訓練課程安排、相關福利......等）</label>
+                    <textarea id="questions" name="questions" rows="3" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 p-3 border"></textarea>
+                </div>
+
+                <!-- 7. 會後是否參加當代人物論壇 -->
+                <div>
+                    <!-- 調整：使用 form-label-enhanced 讓標籤放大加粗 -->
+                    <label class="block text-gray-700 mb-2 required-field form-label-enhanced">會後是否參加當代人物論壇</label>
+                    <div class="flex gap-6">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="forum_attend" value="是" required class="form-radio text-cyan-600 focus:ring-cyan-500">
+                            <span class="ml-2 text-gray-700">是</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="forum_attend" value="否" class="form-radio text-cyan-600 focus:ring-cyan-500">
+                            <span class="ml-2 text-gray-700">否</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 提交按鈕 -->
+                <button type="submit" id="submit-button" disabled class="w-full py-3 mt-6 text-xl font-bold rounded-lg text-white bg-teal-500 hover:bg-teal-600 active:bg-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-300 transition duration-150 ease-in-out shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+                    <!-- 修正：初始時不顯示轉圈圈，只顯示載入文字 -->
+                    <span id="button-text">載入中...</span>
+                    <svg id="spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+            </form>
+
+            <footer class="mt-10 text-center text-sm text-gray-500 pt-4 border-t border-gray-100">
+                <p>如欲臨時取消請來電或來信告知:</p>
+                <p>📧 <a href="mailto:b20715@mail.chimei.org.tw" class="text-teal-500 hover:underline">b20715@mail.chimei.org.tw</a></p>
+                <p>📞 06-2812811 分機 57439 教學部 詩芸</p>
+            </footer>
+
+        </main>
+    </div>
+
+    <!-- Firebase Script Start -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // 全域變數
+        const MAX_CAPACITY = 70;
+        const SESSIONS = ['上午', '下午'];
+        let db, auth;
+        let isAuthReady = false;
+        let registrationCounts = { '上午': 0, '下午': 0 };
+
+        // DOM 元素
+        const form = document.getElementById('registration-form');
+        const submitButton = document.getElementById('submit-button');
+        const buttonText = document.getElementById('button-text');
+        const spinner = document.getElementById('spinner');
+        // 變更為 Toast 元素
+        const toastContainer = document.getElementById('toast-container');
+        const toastBox = document.getElementById('toast-box');
+        const sessionRadioButtons = document.querySelectorAll('.session-radio');
+        
+        // 顯示訊息 (已修改為 Toast 彈出式)
+        function showMessage(text, isError = false) {
+            // 清除現有狀態類別
+            toastBox.classList.remove('translate-y-0', 'opacity-100', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
+            toastBox.classList.add('translate-y-[-150%]', 'opacity-0'); // 確保初始狀態是隱藏的
+
+            toastBox.textContent = text;
+
+            if (isError) {
+                toastBox.classList.add('bg-red-100', 'text-red-700');
+            } else {
+                toastBox.classList.add('bg-green-100', 'text-green-700');
+            }
+
+            // 顯示動畫
+            // 使用 setTimeout 確保瀏覽器有時間應用 translate-y-[-150%] 狀態，以便觸發過渡效果
+            setTimeout(() => {
+                toastBox.classList.remove('translate-y-[-150%]', 'opacity-0');
+                toastBox.classList.add('translate-y-0', 'opacity-100');
+            }, 10); 
+
+            // 訊息顯示 5 秒後自動隱藏
+            setTimeout(() => {
+                toastBox.classList.remove('translate-y-0', 'opacity-100');
+                toastBox.classList.add('translate-y-[-150%]', 'opacity-0');
+            }, 5000);
+        }
+
+        // 顯示/隱藏載入狀態
+        function setSubmitting(isSubmitting) {
+            submitButton.disabled = isSubmitting || !isAuthReady;
+            // 修正：只有在 isSubmitting 為 true 時才顯示轉圈圈
+            if (isSubmitting) {
+                buttonText.textContent = '報名資料傳送中...';
+                spinner.classList.remove('hidden');
+            } else {
+                // 如果不是在提交狀態，則根據 isAuthReady 判斷顯示文字
+                buttonText.textContent = isAuthReady ? '送出報名表' : '載入中...';
+                spinner.classList.add('hidden');
+            }
+        }
+
+        // --- Firebase 初始化與授權 (MANDATORY) ---
+        async function initializeFirebase() {
+            try {
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+                const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+                if (firebaseConfig) {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+
+                    // 認證邏輯
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                        console.log("Firebase signed in with custom token.");
+                    } else {
+                        await signInAnonymously(auth);
+                        console.log("Firebase signed in anonymously.");
+                    }
+                    
+                    isAuthReady = true;
+                    // 認證完成後，開始監聽資料庫
+                    setupRealtimeCapacityListener(db, appId);
+                    
+                } else {
+                    console.error("Firebase config is missing.");
+                    showMessage('Firebase 配置錯誤，報名系統無法啟動。', true);
+                }
+            } catch (error) {
+                console.error("Firebase Initialization Error:", error);
+                showMessage('初始化錯誤，請檢查主控台資訊。', true);
+            }
+        }
+        
+        initializeFirebase();
+
+
+        // --- 資料庫監聽與容量更新 ---
+        function setupRealtimeCapacityListener(dbInstance, appId) {
+            const registrationsColRef = collection(dbInstance, `artifacts/${appId}/public/data/pgy_registrations`);
+            const q = query(registrationsColRef);
+
+            onSnapshot(q, (snapshot) => {
+                let counts = { '上午': 0, '下午': 0 };
+                
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (data.session && SESSIONS.includes(data.session)) {
+                        counts[data.session]++;
+                    }
+                });
+
+                registrationCounts = counts;
+                console.log("Current registration counts:", registrationCounts);
+                
+                // 更新 UI
+                updateCapacityUI(counts);
+            }, (error) => {
+                console.error("Firestore real-time error:", error);
+                showMessage('無法即時更新場次資訊，請檢查網路連線。', true);
+            });
+        }
+
+        // 更新 UI 顯示剩餘名額和場次狀態
+        function updateCapacityUI(counts) {
+            let isAnySessionOpen = false;
+            SESSIONS.forEach(session => {
+                const count = counts[session];
+                const remaining = MAX_CAPACITY - count;
+                const isFull = remaining <= 0;
+                
+                // 1. 更新上方大容量顯示
+                const slotElement = document.querySelector(`#slot-${session} [data-session="${session}"]`);
+                if (slotElement) {
+                    slotElement.textContent = isFull ? '額滿' : remaining;
+                    const parentDiv = slotElement.closest('.capacity-pill');
+                    if (isFull) {
+                        parentDiv.classList.add('opacity-60', 'bg-gray-200');
+                        parentDiv.classList.remove('bg-cyan-50', 'bg-indigo-50');
+                    } else {
+                        isAnySessionOpen = true;
+                        parentDiv.classList.remove('opacity-60', 'bg-gray-200');
+                        // 修正：將 'parent' 替換為 'parentDiv'，避免存取受限的跨域屬性並修復邏輯錯誤。
+                        parentDiv.classList.add(session === '上午' ? 'bg-cyan-50' : 'bg-indigo-50');
+                    }
+                }
+
+                // 2. 更新表單選項狀態
+                const radio = document.querySelector(`input[name="session"][value="${session}"]`);
+                const label = radio ? radio.closest('.session-option-label') : null;
+                const statusSpan = document.querySelector(`span[data-count-status="${session}"]`);
+
+                if (statusSpan) {
+                    statusSpan.textContent = isFull ? ' (已額滿)' : `(剩餘 ${remaining} 名)`;
+                }
+
+                if (radio && label) {
+                    radio.disabled = isFull;
+                    if (isFull) {
+                        label.classList.add('bg-gray-100', 'text-gray-400', 'cursor-not-allowed', 'opacity-70');
+                        label.classList.remove('bg-white', 'hover:bg-cyan-50', 'border-teal-300');
+                        // 如果用戶選中的場次被額滿了，則清空選擇
+                        if (radio.checked) {
+                            radio.checked = false;
+                        }
+                    } else {
+                        label.classList.remove('bg-gray-100', 'text-gray-400', 'cursor-not-allowed', 'opacity-70');
+                        label.classList.add('bg-white', 'hover:bg-cyan-50', 'border-teal-300', 'shadow-sm');
+                    }
+                }
+            });
+            
+            // 3. 檢查總體報名按鈕狀態
+            if (isAuthReady) {
+                // 修正：當 isAuthReady 時，立即將按鈕文字設定為「送出報名表」或「所有場次皆額滿」
+                if (!isAnySessionOpen) {
+                    submitButton.disabled = true; 
+                    buttonText.textContent = '所有場次皆額滿';
+                } else {
+                    submitButton.disabled = false;
+                    buttonText.textContent = '送出報名表';
+                }
+            } else {
+                // 如果還沒認證好，則禁用並顯示載入中
+                submitButton.disabled = true;
+                buttonText.textContent = '載入中...';
+            }
+        }
+
+
+        // --- 表單提交處理 ---
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            // 修正：在提交開始時才顯示轉圈圈
+            setSubmitting(true); 
+            
+            const formData = new FormData(form);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+
+            const selectedSession = data.session;
+            
+            // 再次檢查容量 (防止多個用戶同時提交)
+            if (registrationCounts[selectedSession] >= MAX_CAPACITY) {
+                showMessage(`${selectedSession}場次已在您提交時額滿，請重新選擇！`, true);
+                setSubmitting(false);
+                return;
+            }
+
+            // 確保必填欄位都有填寫 (雖然 HTML required 有作用，但後端仍需檢查)
+            if (!data.name || !data.email || !data.year_system || !data.school || !data.session || !data.forum_attend) {
+                showMessage('請檢查所有標有 * 的必填欄位！', true);
+                setSubmitting(false);
+                return;
+            }
+
+            // 準備要儲存的資料
+            const registrationData = {
+                name: data.name,
+                email: data.email,
+                year_system: data.year_system,
+                school: data.school,
+                session: data.session,
+                questions: data.questions || '', // 選填
+                forum_attend: data.forum_attend === '是',
+                timestamp: serverTimestamp(),
+                userId: auth.currentUser?.uid || 'anonymous', // 記錄報名者的ID
+            };
+
+            try {
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const registrationsColRef = collection(db, `artifacts/${appId}/public/data/pgy_registrations`);
+                
+                await addDoc(registrationsColRef, registrationData);
+
+                showMessage('🎉 報名成功！您已成功報名本次說明會。', false);
+                form.reset(); // 清空表單
+            } catch (error) {
+                console.error("Registration submission failed:", error);
+                showMessage(`報名失敗：${error.message}，請稍後重試。`, true);
+            } finally {
+                // 修正：在提交結束時隱藏轉圈圈並還原按鈕文字
+                setSubmitting(false); 
+            }
+        });
+
+    </script>
+    <!-- Firebase Script End -->
+</body>
+</html>
